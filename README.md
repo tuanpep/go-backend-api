@@ -61,6 +61,23 @@ go-backend-api/
 - Docker and Docker Compose
 - Git
 
+## 📥 Installation
+
+### Clone the Repository
+```bash
+git clone <your-repo-url>
+cd go-backend-api
+```
+
+### Environment Setup
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Edit environment variables (optional)
+nano .env
+```
+
 > **Note**: You can also use a local PostgreSQL installation, but Docker is recommended for easy setup.
 
 ## 🚀 Getting Started

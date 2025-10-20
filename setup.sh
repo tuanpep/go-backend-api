@@ -74,35 +74,10 @@ fi
 
 # Create .env file if it doesn't exist
 if [ ! -f .env ]; then
-    echo "📝 Creating .env file..."
-    cat > .env << EOF
-# Server Configuration
-PORT=8080
-ENVIRONMENT=development
-
-# Database Configuration (Docker PostgreSQL)
-DATABASE_URL=postgres://go_user:go_password@localhost:5433/go_learning_db?sslmode=disable
-
-# JWT Configuration
-JWT_ACCESS_SECRET=your-super-secure-access-secret-key-here
-JWT_REFRESH_SECRET=your-super-secure-refresh-secret-key-here
-JWT_ACCESS_EXPIRATION=15m
-JWT_REFRESH_EXPIRATION=168h
-JWT_ISSUER=go-backend-api
-JWT_AUDIENCE=go-backend-api-users
-
-# Security Configuration
-RATE_LIMIT_REQUESTS=100
-RATE_LIMIT_WINDOW=1m
-MAX_LOGIN_ATTEMPTS=5
-ACCOUNT_LOCKOUT_TIME=15m
-PASSWORD_MIN_LENGTH=8
-PASSWORD_REQUIRE_UPPER=true
-PASSWORD_REQUIRE_LOWER=true
-PASSWORD_REQUIRE_NUMBER=true
-PASSWORD_REQUIRE_SPECIAL=true
-EOF
-    echo "✅ .env file created!"
+    echo "📝 Creating .env file from .env.example..."
+    cp .env.example .env
+    echo "✅ .env file created from template!"
+    echo "ℹ️  You may want to update the JWT secrets in .env for production use"
 else
     echo "ℹ️  .env file already exists, skipping creation"
 fi
