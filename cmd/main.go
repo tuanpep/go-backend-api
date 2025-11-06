@@ -1,6 +1,7 @@
 package main
 
 import (
+	"go-backend-api/docs"
 	"go-backend-api/internal/app/config"
 	"go-backend-api/internal/app/logger"
 	"go-backend-api/internal/application/handlers"
@@ -11,7 +12,29 @@ import (
 	"go-backend-api/internal/pkg/auth"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
+
+// @title           Go Backend API
+// @version         1.0
+// @description     A comprehensive REST API built with Go for learning backend development
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   API Support
+// @contact.url    http://www.swagger.io/support
+// @contact.email  support@swagger.io
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8080
+// @BasePath  /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 
 func main() {
 	// Load configuration
@@ -72,6 +95,10 @@ func main() {
 			"message": "Go Backend API is running",
 		})
 	})
+
+	// Swagger documentation
+	docs.SwaggerInfo.BasePath = "/api/v1"
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// API routes
 	api := router.Group("/api/v1")

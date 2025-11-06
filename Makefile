@@ -70,8 +70,8 @@ dev: build
 # Setup the project
 setup:
 	@echo "$(BLUE)Setting up the project...$(NC)"
-	chmod +x setup.sh
-	./setup.sh
+	chmod +x scripts/setup.sh
+	./scripts/setup.sh
 
 # Start database
 db-up:
@@ -93,14 +93,14 @@ db-logs:
 # Run database migrations
 migrate:
 	@echo "$(BLUE)Running database migrations...$(NC)"
-	chmod +x migrate.sh
-	./migrate.sh
+	chmod +x scripts/migrate.sh
+	./scripts/migrate.sh
 
 # Test the API
 test-api:
 	@echo "$(BLUE)Testing API endpoints...$(NC)"
-	chmod +x test_api.sh
-	./test_api.sh
+	chmod +x scripts/test_api.sh
+	./scripts/test_api.sh
 
 # Show help
 help:

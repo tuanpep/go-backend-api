@@ -23,6 +23,18 @@ func NewPostHandler(postService entities.PostService) *PostHandler {
 }
 
 // Create creates a new post
+// @Summary      Create a new post
+// @Description  Create a new post (authenticated users only)
+// @Tags         posts
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request  body      entities.CreatePostRequest  true  "Post data"
+// @Success      201      {object}  response.Response{data=entities.Post}
+// @Failure      400      {object}  response.Response
+// @Failure      401      {object}  response.Response
+// @Failure      500      {object}  response.Response
+// @Router       /posts [post]
 func (h *PostHandler) Create(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -52,6 +64,20 @@ func (h *PostHandler) Create(c *gin.Context) {
 }
 
 // GetAll gets all posts with pagination
+// @Summary      Get all posts
+// @Description  Get all posts with pagination support
+// @Tags         posts
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page      query     int     false  "Page number"  default(1)
+// @Param        per_page  query     int     false  "Items per page"  default(10)
+// @Param        author_id query     string  false  "Filter by author ID"
+// @Success      200       {object}  response.PaginatedResponse{data=[]entities.Post}
+// @Failure      400       {object}  response.Response
+// @Failure      401       {object}  response.Response
+// @Failure      500       {object}  response.Response
+// @Router       /posts [get]
 func (h *PostHandler) GetAll(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "10"))
@@ -96,6 +122,19 @@ func (h *PostHandler) GetAll(c *gin.Context) {
 }
 
 // GetByID gets a post by ID
+// @Summary      Get post by ID
+// @Description  Get a specific post by its ID
+// @Tags         posts
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      string  true  "Post ID"
+// @Success      200  {object}  response.Response{data=entities.Post}
+// @Failure      400  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Failure      404  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Router       /posts/{id} [get]
 func (h *PostHandler) GetByID(c *gin.Context) {
 	postID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -113,6 +152,21 @@ func (h *PostHandler) GetByID(c *gin.Context) {
 }
 
 // Update updates a post
+// @Summary      Update a post
+// @Description  Update a post (author only)
+// @Tags         posts
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id       path      string                true  "Post ID"
+// @Param        request  body      entities.UpdatePostRequest  true  "Post update data"
+// @Success      200      {object}  response.Response{data=entities.Post}
+// @Failure      400      {object}  response.Response
+// @Failure      401      {object}  response.Response
+// @Failure      403      {object}  response.Response
+// @Failure      404      {object}  response.Response
+// @Failure      500      {object}  response.Response
+// @Router       /posts/{id} [put]
 func (h *PostHandler) Update(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -148,6 +202,20 @@ func (h *PostHandler) Update(c *gin.Context) {
 }
 
 // Delete deletes a post
+// @Summary      Delete a post
+// @Description  Delete a post (author only)
+// @Tags         posts
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      string  true  "Post ID"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Failure      403  {object}  response.Response
+// @Failure      404  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Router       /posts/{id} [delete]
 func (h *PostHandler) Delete(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {

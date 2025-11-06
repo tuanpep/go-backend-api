@@ -21,6 +21,17 @@ func NewUserHandler(userService entities.UserService) *UserHandler {
 }
 
 // GetProfile gets the current user's profile
+// @Summary      Get user profile
+// @Description  Get the authenticated user's profile information
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  response.Response{data=entities.User}
+// @Failure      401  {object}  response.Response
+// @Failure      404  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Router       /users/profile [get]
 func (h *UserHandler) GetProfile(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -44,6 +55,18 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 }
 
 // UpdateProfile updates the current user's profile
+// @Summary      Update user profile
+// @Description  Update the authenticated user's profile information
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request  body      entities.UpdateUserRequest  true  "User update data"
+// @Success      200      {object}  response.Response{data=entities.User}
+// @Failure      400      {object}  response.Response
+// @Failure      401      {object}  response.Response
+// @Failure      500      {object}  response.Response
+// @Router       /users/profile [put]
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -73,6 +96,16 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 }
 
 // DeleteProfile deletes the current user's account
+// @Summary      Delete user account
+// @Description  Delete the authenticated user's account
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Router       /users/profile [delete]
 func (h *UserHandler) DeleteProfile(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
