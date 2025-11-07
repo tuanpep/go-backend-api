@@ -114,12 +114,17 @@ func main() {
 		protected := api.Group("/")
 		protected.Use(middleware.AuthMiddleware(jwtManager))
 		{
+			// Current user endpoint
+			protected.GET("/me", userHandler.GetMe)
+
 			// User routes
 			users := protected.Group("/users")
 			{
 				users.GET("/profile", userHandler.GetProfile)
 				users.PUT("/profile", userHandler.UpdateProfile)
 				users.DELETE("/profile", userHandler.DeleteProfile)
+				users.PUT("/:id/activate", userHandler.ActivateUser)
+				users.PUT("/:id/deactivate", userHandler.DeactivateUser)
 			}
 
 			// Post routes

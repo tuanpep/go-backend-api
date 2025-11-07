@@ -234,6 +234,40 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /me:
+    get:
+      consumes:
+      - application/json
+      description: Get the authenticated user's information (alias for /users/profile)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/go-backend-api_internal_domain_entities.User'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get current user information
+      tags:
+      - users
   /posts:
     get:
       consumes:
@@ -464,6 +498,76 @@ paths:
       summary: Update a post
       tags:
       - posts
+  /users/{id}/activate:
+    put:
+      consumes:
+      - application/json
+      description: Activate a user account by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Activate user account
+      tags:
+      - users
+  /users/{id}/deactivate:
+    put:
+      consumes:
+      - application/json
+      description: Deactivate a user account by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Deactivate user account
+      tags:
+      - users
   /users/profile:
     delete:
       consumes:

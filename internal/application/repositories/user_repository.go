@@ -22,10 +22,10 @@ func NewUserRepository(db *sql.DB) entities.UserRepository {
 
 // Create creates a new user
 func (r *userRepository) Create(user *entities.User) error {
-	query := `INSERT INTO users (username, email, password, created_at, updated_at) 
-			  VALUES ($1, $2, $3, $4, $5) RETURNING id`
+	query := `INSERT INTO users (username, email, password, is_active, created_at, updated_at) 
+			  VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
 
-	err := r.db.QueryRow(query, user.Username, user.Email, user.Password, user.CreatedAt, user.UpdatedAt).Scan(&user.ID)
+	err := r.db.QueryRow(query, user.Username, user.Email, user.Password, user.IsActive, user.CreatedAt, user.UpdatedAt).Scan(&user.ID)
 	if err != nil {
 		return errors.WrapError(err, "Failed to create user")
 	}
@@ -36,10 +36,10 @@ func (r *userRepository) Create(user *entities.User) error {
 // GetByID gets a user by ID
 func (r *userRepository) GetByID(id uuid.UUID) (*entities.User, error) {
 	user := &entities.User{}
-	query := `SELECT id, username, email, password, created_at, updated_at FROM users WHERE id = $1`
+	query := `SELECT id, username, email, password, is_active, last_login, created_at, updated_at FROM users WHERE id = $1`
 
 	err := r.db.QueryRow(query, id).Scan(
-		&user.ID, &user.Username, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt,
+		&user.ID, &user.Username, &user.Email, &user.Password, &user.IsActive, &user.LastLogin, &user.CreatedAt, &user.UpdatedAt,
 	)
 
 	if err != nil {
@@ -55,10 +55,10 @@ func (r *userRepository) GetByID(id uuid.UUID) (*entities.User, error) {
 // GetByEmail gets a user by email
 func (r *userRepository) GetByEmail(email string) (*entities.User, error) {
 	user := &entities.User{}
-	query := `SELECT id, username, email, password, created_at, updated_at FROM users WHERE email = $1`
+	query := `SELECT id, username, email, password, is_active, last_login, created_at, updated_at FROM users WHERE email = $1`
 
 	err := r.db.QueryRow(query, email).Scan(
-		&user.ID, &user.Username, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt,
+		&user.ID, &user.Username, &user.Email, &user.Password, &user.IsActive, &user.LastLogin, &user.CreatedAt, &user.UpdatedAt,
 	)
 
 	if err != nil {
@@ -74,10 +74,10 @@ func (r *userRepository) GetByEmail(email string) (*entities.User, error) {
 // GetByUsername gets a user by username
 func (r *userRepository) GetByUsername(username string) (*entities.User, error) {
 	user := &entities.User{}
-	query := `SELECT id, username, email, password, created_at, updated_at FROM users WHERE username = $1`
+	query := `SELECT id, username, email, password, is_active, last_login, created_at, updated_at FROM users WHERE username = $1`
 
 	err := r.db.QueryRow(query, username).Scan(
-		&user.ID, &user.Username, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt,
+		&user.ID, &user.Username, &user.Email, &user.Password, &user.IsActive, &user.LastLogin, &user.CreatedAt, &user.UpdatedAt,
 	)
 
 	if err != nil {
@@ -122,6 +122,19 @@ func (r *userRepository) UpdateLastLogin(id uuid.UUID) error {
 	_, err := r.db.Exec(query, now, now, id)
 	if err != nil {
 		return errors.WrapError(err, "Failed to update last login")
+	}
+
+	return nil
+}
+
+// Activate activates a user account
+func (r *userRepository) Activate(id uuid.UUID) error {
+	query := `UPDATE users SET is_active = true, updated_at = $1 WHERE id = $2`
+	now := time.Now()
+
+	_, err := r.db.Exec(query, now, id)
+	if err != nil {
+		return errors.WrapError(err, "Failed to activate user")
 	}
 
 	return nil

@@ -60,3 +60,7 @@ build/
 # Temporary files
 tmp/
 temp/
+
+# Air hot-reload
+build-errors.log
+tmp/

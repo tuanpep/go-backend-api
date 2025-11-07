@@ -58,11 +58,12 @@ func (s *userService) CreateUser(req *entities.CreateUserRequest) (*entities.Use
 		return nil, errors.WrapError(err, "Failed to hash password")
 	}
 
-	// Create user
+	// Create user (active by default)
 	user := &entities.User{
 		Username:  req.Username,
 		Email:     req.Email,
 		Password:  string(hashedPassword),
+		IsActive:  true,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
@@ -233,6 +234,44 @@ func (s *userService) ValidateUser(user *entities.User) error {
 	return s.validator.Validate(user)
 }
 
+// ActivateUser activates a user account
+func (s *userService) ActivateUser(id uuid.UUID) error {
+	// Check if user exists
+	user, err := s.userRepo.GetByID(id)
+	if err != nil {
+		return errors.WrapError(err, "Failed to get user")
+	}
+	if user == nil {
+		return errors.ErrUserNotFound
+	}
+
+	// Activate user
+	if err := s.userRepo.Activate(id); err != nil {
+		return errors.WrapError(err, "Failed to activate user")
+	}
+
+	return nil
+}
+
+// DeactivateUser deactivates a user account
+func (s *userService) DeactivateUser(id uuid.UUID) error {
+	// Check if user exists
+	user, err := s.userRepo.GetByID(id)
+	if err != nil {
+		return errors.WrapError(err, "Failed to get user")
+	}
+	if user == nil {
+		return errors.ErrUserNotFound
+	}
+
+	// Deactivate user
+	if err := s.userRepo.Deactivate(id); err != nil {
+		return errors.WrapError(err, "Failed to deactivate user")
+	}
+
+	return nil
+}
+
 // AuthenticateUser authenticates a user with email and password
 func (s *userService) AuthenticateUser(req *entities.LoginRequest) (*entities.LoginResponse, error) {
 	// Validate request
@@ -256,6 +295,11 @@ func (s *userService) AuthenticateUser(req *entities.LoginRequest) (*entities.Lo
 	err = bcrypt.CompareHashAndPassword([]byte(userWithPassword.Password), []byte(req.Password))
 	if err != nil {
 		return nil, errors.ErrUnauthorized
+	}
+
+	// Check if user is active
+	if !userWithPassword.IsActive {
+		return nil, errors.NewErrorWithCode(403, "Account is deactivated")
 	}
 
 	// Generate JWT token pair

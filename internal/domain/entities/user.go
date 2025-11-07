@@ -29,6 +29,7 @@ type UserRepository interface {
 	ExistsByEmail(email string) (bool, error)
 	ExistsByUsername(username string) (bool, error)
 	UpdateLastLogin(id uuid.UUID) error
+	Activate(id uuid.UUID) error
 	Deactivate(id uuid.UUID) error
 }
 
@@ -43,6 +44,8 @@ type UserService interface {
 	AuthenticateUser(req *LoginRequest) (*LoginResponse, error)
 	RefreshToken(req *RefreshTokenRequest) (*LoginResponse, error)
 	Logout(userID uuid.UUID, tokenID string) error
+	ActivateUser(id uuid.UUID) error
+	DeactivateUser(id uuid.UUID) error
 }
 
 // CreateUserRequest represents the request to create a user

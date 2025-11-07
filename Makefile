@@ -20,7 +20,7 @@ YELLOW=\033[1;33m
 BLUE=\033[0;34m
 NC=\033[0m # No Color
 
-.PHONY: all build clean test deps fmt run dev setup stop logs help
+.PHONY: all build clean test deps fmt run run-once dev watch setup stop logs help
 
 # Default target
 all: clean deps fmt test build
@@ -57,15 +57,29 @@ fmt:
 	$(GOFMT) ./...
 	@echo "$(GREEN)Code formatted!$(NC)"
 
-# Run the application
-run: build
+# Run the application with hot-reload (auto-restart on file changes)
+run:
+	@echo "$(BLUE)Starting $(BINARY_NAME) with hot-reload...$(NC)"
+	@if command -v air > /dev/null 2>&1; then \
+		air; \
+	elif [ -f $$(go env GOPATH)/bin/air ]; then \
+		$$(go env GOPATH)/bin/air; \
+	else \
+		echo "$(YELLOW)Air not found. Installing...$(NC)"; \
+		go install github.com/air-verse/air@latest; \
+		$$(go env GOPATH)/bin/air; \
+	fi
+
+# Run the application once (no hot-reload)
+run-once: build
 	@echo "$(BLUE)Starting $(BINARY_NAME)...$(NC)"
 	./$(BINARY_NAME)
 
-# Development mode (build and run)
-dev: build
-	@echo "$(BLUE)Starting in development mode...$(NC)"
-	./$(BINARY_NAME)
+# Development mode with hot-reload (alias for run)
+dev: run
+
+# Watch mode (alias for run)
+watch: run
 
 # Setup the project
 setup:
@@ -113,8 +127,10 @@ help:
 	@echo "  fmt       - Format code"
 	@echo ""
 	@echo "$(GREEN)Run Commands:$(NC)"
-	@echo "  run       - Build and run the application"
-	@echo "  dev       - Development mode (build and run)"
+	@echo "  run       - Run with hot-reload (auto-restart on file changes)"
+	@echo "  run-once  - Build and run once (no hot-reload)"
+	@echo "  dev       - Alias for run (hot-reload mode)"
+	@echo "  watch     - Alias for run (hot-reload mode)"
 	@echo ""
 	@echo "$(GREEN)Database Commands:$(NC)"
 	@echo "  db-up     - Start PostgreSQL database"
@@ -132,5 +148,6 @@ help:
 	@echo ""
 	@echo "$(YELLOW)Quick Start:$(NC)"
 	@echo "  make setup    # Complete setup"
-	@echo "  make run      # Build and run"
+	@echo "  make run      # Run with hot-reload (recommended for development)"
+	@echo "  make run-once # Build and run once"
 	@echo "  make test-api # Test the API"
