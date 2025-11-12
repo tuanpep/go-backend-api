@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"go-backend-api/internal/domain/entities"
+	"go-backend-api/internal/models"
 	"go-backend-api/internal/pkg/auth"
 	"go-backend-api/internal/pkg/response"
 
@@ -10,12 +10,12 @@ import (
 
 // AuthHandler handles authentication requests
 type AuthHandler struct {
-	userService entities.UserService
+	userService models.UserService
 	jwtManager  *auth.JWTManager
 }
 
 // NewAuthHandler creates a new auth handler
-func NewAuthHandler(userService entities.UserService, jwtManager *auth.JWTManager) *AuthHandler {
+func NewAuthHandler(userService models.UserService, jwtManager *auth.JWTManager) *AuthHandler {
 	return &AuthHandler{
 		userService: userService,
 		jwtManager:  jwtManager,
@@ -28,13 +28,13 @@ func NewAuthHandler(userService entities.UserService, jwtManager *auth.JWTManage
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        request  body      entities.CreateUserRequest  true  "User registration data"
-// @Success      201      {object}  response.Response{data=entities.User}
+// @Param        request  body      models.CreateUserRequest  true  "User registration data"
+// @Success      201      {object}  response.Response{data=models.User}
 // @Failure      400      {object}  response.Response
 // @Failure      500      {object}  response.Response
 // @Router       /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
-	var req entities.CreateUserRequest
+	var req models.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request data")
 		return
@@ -55,14 +55,14 @@ func (h *AuthHandler) Register(c *gin.Context) {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        request  body      entities.LoginRequest  true  "Login credentials"
-// @Success      200      {object}  response.Response{data=entities.LoginResponse}
+// @Param        request  body      models.LoginRequest  true  "Login credentials"
+// @Success      200      {object}  response.Response{data=models.LoginResponse}
 // @Failure      400      {object}  response.Response
 // @Failure      401      {object}  response.Response
 // @Failure      500      {object}  response.Response
 // @Router       /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
-	var req entities.LoginRequest
+	var req models.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request data")
 		return

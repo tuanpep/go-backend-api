@@ -3,7 +3,7 @@ package handlers
 import (
 	"strconv"
 
-	"go-backend-api/internal/domain/entities"
+	"go-backend-api/internal/models"
 	"go-backend-api/internal/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -12,11 +12,11 @@ import (
 
 // PostHandler handles post requests
 type PostHandler struct {
-	postService entities.PostService
+	postService models.PostService
 }
 
 // NewPostHandler creates a new post handler
-func NewPostHandler(postService entities.PostService) *PostHandler {
+func NewPostHandler(postService models.PostService) *PostHandler {
 	return &PostHandler{
 		postService: postService,
 	}
@@ -29,8 +29,8 @@ func NewPostHandler(postService entities.PostService) *PostHandler {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        request  body      entities.CreatePostRequest  true  "Post data"
-// @Success      201      {object}  response.Response{data=entities.Post}
+// @Param        request  body      models.CreatePostRequest  true  "Post data"
+// @Success      201      {object}  response.Response{data=models.Post}
 // @Failure      400      {object}  response.Response
 // @Failure      401      {object}  response.Response
 // @Failure      500      {object}  response.Response
@@ -48,7 +48,7 @@ func (h *PostHandler) Create(c *gin.Context) {
 		return
 	}
 
-	var req entities.CreatePostRequest
+	var req models.CreatePostRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request data")
 		return
@@ -73,7 +73,7 @@ func (h *PostHandler) Create(c *gin.Context) {
 // @Param        page      query     int     false  "Page number"  default(1)
 // @Param        per_page  query     int     false  "Items per page"  default(10)
 // @Param        author_id query     string  false  "Filter by author ID"
-// @Success      200       {object}  response.PaginatedResponse{data=[]entities.Post}
+// @Success      200       {object}  response.PaginatedResponse{data=[]models.Post}
 // @Failure      400       {object}  response.Response
 // @Failure      401       {object}  response.Response
 // @Failure      500       {object}  response.Response
@@ -90,7 +90,7 @@ func (h *PostHandler) GetAll(c *gin.Context) {
 		perPage = 10
 	}
 
-	var posts []*entities.Post
+	var posts []*models.Post
 	var total int
 	var err error
 
@@ -129,7 +129,7 @@ func (h *PostHandler) GetAll(c *gin.Context) {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        id   path      string  true  "Post ID"
-// @Success      200  {object}  response.Response{data=entities.Post}
+// @Success      200  {object}  response.Response{data=models.Post}
 // @Failure      400  {object}  response.Response
 // @Failure      401  {object}  response.Response
 // @Failure      404  {object}  response.Response
@@ -159,8 +159,8 @@ func (h *PostHandler) GetByID(c *gin.Context) {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        id       path      string                true  "Post ID"
-// @Param        request  body      entities.UpdatePostRequest  true  "Post update data"
-// @Success      200      {object}  response.Response{data=entities.Post}
+// @Param        request  body      models.UpdatePostRequest  true  "Post update data"
+// @Success      200      {object}  response.Response{data=models.Post}
 // @Failure      400      {object}  response.Response
 // @Failure      401      {object}  response.Response
 // @Failure      403      {object}  response.Response
@@ -186,7 +186,7 @@ func (h *PostHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var req entities.UpdatePostRequest
+	var req models.UpdatePostRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request data")
 		return

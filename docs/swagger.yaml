@@ -1,6 +1,6 @@
 basePath: /api/v1
 definitions:
-  go-backend-api_internal_domain_entities.CreatePostRequest:
+  models.CreatePostRequest:
     properties:
       content:
         minLength: 1
@@ -15,7 +15,7 @@ definitions:
     - content
     - title
     type: object
-  go-backend-api_internal_domain_entities.CreateUserRequest:
+  models.CreateUserRequest:
     properties:
       email:
         type: string
@@ -28,7 +28,7 @@ definitions:
     - password
     - username
     type: object
-  go-backend-api_internal_domain_entities.LoginRequest:
+  models.LoginRequest:
     properties:
       email:
         type: string
@@ -38,7 +38,7 @@ definitions:
     - email
     - password
     type: object
-  go-backend-api_internal_domain_entities.LoginResponse:
+  models.LoginResponse:
     properties:
       access_token:
         type: string
@@ -49,12 +49,12 @@ definitions:
       token_type:
         type: string
       user:
-        $ref: '#/definitions/go-backend-api_internal_domain_entities.User'
+        $ref: '#/definitions/models.User'
     type: object
-  go-backend-api_internal_domain_entities.Post:
+  models.Post:
     properties:
       author:
-        $ref: '#/definitions/go-backend-api_internal_domain_entities.User'
+        $ref: '#/definitions/models.User'
       author_id:
         type: string
       content:
@@ -70,7 +70,7 @@ definitions:
       updated_at:
         type: string
     type: object
-  go-backend-api_internal_domain_entities.UpdatePostRequest:
+  models.UpdatePostRequest:
     properties:
       content:
         minLength: 1
@@ -82,14 +82,14 @@ definitions:
         minLength: 1
         type: string
     type: object
-  go-backend-api_internal_domain_entities.UpdateUserRequest:
+  models.UpdateUserRequest:
     properties:
       email:
         type: string
       username:
         type: string
     type: object
-  go-backend-api_internal_domain_entities.User:
+  models.User:
     properties:
       created_at:
         type: string
@@ -106,7 +106,7 @@ definitions:
       username:
         type: string
     type: object
-  go-backend-api_internal_pkg_response.ErrorInfo:
+  response.ErrorInfo:
     properties:
       code:
         type: integer
@@ -115,17 +115,17 @@ definitions:
       message:
         type: string
     type: object
-  go-backend-api_internal_pkg_response.PaginatedResponse:
+  response.PaginatedResponse:
     properties:
       data: {}
       message:
         type: string
       meta:
-        $ref: '#/definitions/go-backend-api_internal_pkg_response.PaginationMeta'
+        $ref: '#/definitions/response.PaginationMeta'
       success:
         type: boolean
     type: object
-  go-backend-api_internal_pkg_response.PaginationMeta:
+  response.PaginationMeta:
     properties:
       page:
         type: integer
@@ -136,11 +136,11 @@ definitions:
       total_pages:
         type: integer
     type: object
-  go-backend-api_internal_pkg_response.Response:
+  response.Response:
     properties:
       data: {}
       error:
-        $ref: '#/definitions/go-backend-api_internal_pkg_response.ErrorInfo'
+        $ref: '#/definitions/response.ErrorInfo'
       message:
         type: string
       success:
@@ -171,7 +171,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/go-backend-api_internal_domain_entities.LoginRequest'
+          $ref: '#/definitions/models.LoginRequest'
       produces:
       - application/json
       responses:
@@ -179,23 +179,23 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/go-backend-api_internal_domain_entities.LoginResponse'
+                  $ref: '#/definitions/models.LoginResponse'
               type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Login user
       tags:
       - auth
@@ -210,7 +210,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/go-backend-api_internal_domain_entities.CreateUserRequest'
+          $ref: '#/definitions/models.CreateUserRequest'
       produces:
       - application/json
       responses:
@@ -218,19 +218,19 @@ paths:
           description: Created
           schema:
             allOf:
-            - $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/go-backend-api_internal_domain_entities.User'
+                  $ref: '#/definitions/models.User'
               type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Register a new user
       tags:
       - auth
@@ -246,23 +246,23 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/go-backend-api_internal_domain_entities.User'
+                  $ref: '#/definitions/models.User'
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get current user information
@@ -295,25 +295,25 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/go-backend-api_internal_pkg_response.PaginatedResponse'
+            - $ref: '#/definitions/response.PaginatedResponse'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/go-backend-api_internal_domain_entities.Post'
+                    $ref: '#/definitions/models.Post'
                   type: array
               type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get all posts
@@ -329,7 +329,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/go-backend-api_internal_domain_entities.CreatePostRequest'
+          $ref: '#/definitions/models.CreatePostRequest'
       produces:
       - application/json
       responses:
@@ -337,23 +337,23 @@ paths:
           description: Created
           schema:
             allOf:
-            - $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/go-backend-api_internal_domain_entities.Post'
+                  $ref: '#/definitions/models.Post'
               type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Create a new post
@@ -376,27 +376,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Delete a post
@@ -419,27 +419,27 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/go-backend-api_internal_domain_entities.Post'
+                  $ref: '#/definitions/models.Post'
               type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get post by ID
@@ -460,7 +460,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/go-backend-api_internal_domain_entities.UpdatePostRequest'
+          $ref: '#/definitions/models.UpdatePostRequest'
       produces:
       - application/json
       responses:
@@ -468,31 +468,31 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/go-backend-api_internal_domain_entities.Post'
+                  $ref: '#/definitions/models.Post'
               type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Update a post
@@ -515,19 +515,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Activate user account
@@ -550,19 +550,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Deactivate user account
@@ -579,15 +579,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Delete user account
@@ -604,23 +604,23 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/go-backend-api_internal_domain_entities.User'
+                  $ref: '#/definitions/models.User'
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get user profile
@@ -636,7 +636,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/go-backend-api_internal_domain_entities.UpdateUserRequest'
+          $ref: '#/definitions/models.UpdateUserRequest'
       produces:
       - application/json
       responses:
@@ -644,23 +644,23 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/go-backend-api_internal_domain_entities.User'
+                  $ref: '#/definitions/models.User'
               type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/go-backend-api_internal_pkg_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Update user profile

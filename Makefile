@@ -20,7 +20,7 @@ YELLOW=\033[1;33m
 BLUE=\033[0;34m
 NC=\033[0m # No Color
 
-.PHONY: all build clean test deps fmt run run-once dev watch setup stop logs help
+.PHONY: all build clean test deps fmt run run-once dev watch setup stop logs help swagger
 
 # Default target
 all: clean deps fmt test build
@@ -116,6 +116,22 @@ test-api:
 	chmod +x scripts/test_api.sh
 	./scripts/test_api.sh
 
+# Generate Swagger documentation
+swagger:
+	@echo "$(BLUE)Generating Swagger documentation...$(NC)"
+	@if command -v swag > /dev/null 2>&1; then \
+		swag init -g $(MAIN_PATH) --parseInternal; \
+		echo "$(GREEN)Swagger documentation generated!$(NC)"; \
+	elif [ -f $$(go env GOPATH)/bin/swag ]; then \
+		$$(go env GOPATH)/bin/swag init -g $(MAIN_PATH) --parseInternal; \
+		echo "$(GREEN)Swagger documentation generated!$(NC)"; \
+	else \
+		echo "$(YELLOW)Swag not found. Installing...$(NC)"; \
+		go install github.com/swaggo/swag/cmd/swag@latest; \
+		$$(go env GOPATH)/bin/swag init -g $(MAIN_PATH) --parseInternal; \
+		echo "$(GREEN)Swagger documentation generated!$(NC)"; \
+	fi
+
 # Show help
 help:
 	@echo "$(BLUE)Go Backend API - Available Commands:$(NC)"
@@ -125,6 +141,7 @@ help:
 	@echo "  clean     - Clean build artifacts"
 	@echo "  deps      - Download and update dependencies"
 	@echo "  fmt       - Format code"
+	@echo "  swagger   - Generate Swagger documentation"
 	@echo ""
 	@echo "$(GREEN)Run Commands:$(NC)"
 	@echo "  run       - Run with hot-reload (auto-restart on file changes)"
@@ -150,4 +167,5 @@ help:
 	@echo "  make setup    # Complete setup"
 	@echo "  make run      # Run with hot-reload (recommended for development)"
 	@echo "  make run-once # Build and run once"
+	@echo "  make swagger  # Generate Swagger documentation"
 	@echo "  make test-api # Test the API"

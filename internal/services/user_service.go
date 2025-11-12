@@ -3,7 +3,7 @@ package services
 import (
 	"time"
 
-	"go-backend-api/internal/domain/entities"
+	"go-backend-api/internal/models"
 	"go-backend-api/internal/pkg/auth"
 	"go-backend-api/internal/pkg/errors"
 	"go-backend-api/internal/pkg/validation"
@@ -14,13 +14,13 @@ import (
 
 // userService implements UserService interface
 type userService struct {
-	userRepo  entities.UserRepository
+	userRepo  models.UserRepository
 	jwtMgr    *auth.JWTManager
 	validator *validation.Validator
 }
 
 // NewUserService creates a new user service
-func NewUserService(userRepo entities.UserRepository, jwtMgr *auth.JWTManager) entities.UserService {
+func NewUserService(userRepo models.UserRepository, jwtMgr *auth.JWTManager) models.UserService {
 	return &userService{
 		userRepo:  userRepo,
 		jwtMgr:    jwtMgr,
@@ -29,7 +29,7 @@ func NewUserService(userRepo entities.UserRepository, jwtMgr *auth.JWTManager) e
 }
 
 // CreateUser creates a new user
-func (s *userService) CreateUser(req *entities.CreateUserRequest) (*entities.User, error) {
+func (s *userService) CreateUser(req *models.CreateUserRequest) (*models.User, error) {
 	// Validate request
 	if err := s.validator.Validate(req); err != nil {
 		return nil, errors.WrapErrorWithCode(err, 400, "Validation failed")
@@ -59,7 +59,7 @@ func (s *userService) CreateUser(req *entities.CreateUserRequest) (*entities.Use
 	}
 
 	// Create user (active by default)
-	user := &entities.User{
+	user := &models.User{
 		Username:  req.Username,
 		Email:     req.Email,
 		Password:  string(hashedPassword),
@@ -79,7 +79,7 @@ func (s *userService) CreateUser(req *entities.CreateUserRequest) (*entities.Use
 }
 
 // GetUserByID gets a user by ID
-func (s *userService) GetUserByID(id uuid.UUID) (*entities.User, error) {
+func (s *userService) GetUserByID(id uuid.UUID) (*models.User, error) {
 	user, err := s.userRepo.GetByID(id)
 	if err != nil {
 		return nil, errors.WrapError(err, "Failed to get user")
@@ -95,7 +95,7 @@ func (s *userService) GetUserByID(id uuid.UUID) (*entities.User, error) {
 }
 
 // GetUserByEmail gets a user by email
-func (s *userService) GetUserByEmail(email string) (*entities.User, error) {
+func (s *userService) GetUserByEmail(email string) (*models.User, error) {
 	user, err := s.userRepo.GetByEmail(email)
 	if err != nil {
 		return nil, errors.WrapError(err, "Failed to get user")
@@ -108,7 +108,7 @@ func (s *userService) GetUserByEmail(email string) (*entities.User, error) {
 }
 
 // UpdateUser updates a user
-func (s *userService) UpdateUser(id uuid.UUID, req *entities.UpdateUserRequest) (*entities.User, error) {
+func (s *userService) UpdateUser(id uuid.UUID, req *models.UpdateUserRequest) (*models.User, error) {
 	// Validate request
 	if err := s.validator.Validate(req); err != nil {
 		return nil, errors.WrapErrorWithCode(err, 400, "Validation failed")
@@ -181,7 +181,7 @@ func (s *userService) DeleteUser(id uuid.UUID) error {
 }
 
 // RefreshToken refreshes an access token using a refresh token
-func (s *userService) RefreshToken(req *entities.RefreshTokenRequest) (*entities.LoginResponse, error) {
+func (s *userService) RefreshToken(req *models.RefreshTokenRequest) (*models.LoginResponse, error) {
 	// Validate refresh token
 	claims, err := s.jwtMgr.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
@@ -208,7 +208,7 @@ func (s *userService) RefreshToken(req *entities.RefreshTokenRequest) (*entities
 		return nil, errors.WrapError(err, "Failed to generate token")
 	}
 
-	return &entities.LoginResponse{
+	return &models.LoginResponse{
 		AccessToken:  tokenPair.AccessToken,
 		RefreshToken: tokenPair.RefreshToken,
 		TokenType:    tokenPair.TokenType,
@@ -230,7 +230,7 @@ func (s *userService) Logout(userID uuid.UUID, tokenID string) error {
 }
 
 // ValidateUser validates a user entity
-func (s *userService) ValidateUser(user *entities.User) error {
+func (s *userService) ValidateUser(user *models.User) error {
 	return s.validator.Validate(user)
 }
 
@@ -273,7 +273,7 @@ func (s *userService) DeactivateUser(id uuid.UUID) error {
 }
 
 // AuthenticateUser authenticates a user with email and password
-func (s *userService) AuthenticateUser(req *entities.LoginRequest) (*entities.LoginResponse, error) {
+func (s *userService) AuthenticateUser(req *models.LoginRequest) (*models.LoginResponse, error) {
 	// Validate request
 	if err := s.validator.Validate(req); err != nil {
 		return nil, errors.WrapErrorWithCode(err, 400, "Validation failed")
@@ -308,7 +308,7 @@ func (s *userService) AuthenticateUser(req *entities.LoginRequest) (*entities.Lo
 		return nil, errors.WrapError(err, "Failed to generate token")
 	}
 
-	return &entities.LoginResponse{
+	return &models.LoginResponse{
 		AccessToken:  tokenPair.AccessToken,
 		RefreshToken: tokenPair.RefreshToken,
 		TokenType:    tokenPair.TokenType,

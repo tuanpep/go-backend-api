@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"time"
 
-	"go-backend-api/internal/domain/entities"
+	"go-backend-api/internal/models"
 	"go-backend-api/internal/pkg/errors"
 
 	"github.com/google/uuid"
@@ -16,12 +16,12 @@ type userRepository struct {
 }
 
 // NewUserRepository creates a new user repository
-func NewUserRepository(db *sql.DB) entities.UserRepository {
+func NewUserRepository(db *sql.DB) models.UserRepository {
 	return &userRepository{db: db}
 }
 
 // Create creates a new user
-func (r *userRepository) Create(user *entities.User) error {
+func (r *userRepository) Create(user *models.User) error {
 	query := `INSERT INTO users (username, email, password, is_active, created_at, updated_at) 
 			  VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
 
@@ -34,8 +34,8 @@ func (r *userRepository) Create(user *entities.User) error {
 }
 
 // GetByID gets a user by ID
-func (r *userRepository) GetByID(id uuid.UUID) (*entities.User, error) {
-	user := &entities.User{}
+func (r *userRepository) GetByID(id uuid.UUID) (*models.User, error) {
+	user := &models.User{}
 	query := `SELECT id, username, email, password, is_active, last_login, created_at, updated_at FROM users WHERE id = $1`
 
 	err := r.db.QueryRow(query, id).Scan(
@@ -53,8 +53,8 @@ func (r *userRepository) GetByID(id uuid.UUID) (*entities.User, error) {
 }
 
 // GetByEmail gets a user by email
-func (r *userRepository) GetByEmail(email string) (*entities.User, error) {
-	user := &entities.User{}
+func (r *userRepository) GetByEmail(email string) (*models.User, error) {
+	user := &models.User{}
 	query := `SELECT id, username, email, password, is_active, last_login, created_at, updated_at FROM users WHERE email = $1`
 
 	err := r.db.QueryRow(query, email).Scan(
@@ -72,8 +72,8 @@ func (r *userRepository) GetByEmail(email string) (*entities.User, error) {
 }
 
 // GetByUsername gets a user by username
-func (r *userRepository) GetByUsername(username string) (*entities.User, error) {
-	user := &entities.User{}
+func (r *userRepository) GetByUsername(username string) (*models.User, error) {
+	user := &models.User{}
 	query := `SELECT id, username, email, password, is_active, last_login, created_at, updated_at FROM users WHERE username = $1`
 
 	err := r.db.QueryRow(query, username).Scan(
@@ -91,7 +91,7 @@ func (r *userRepository) GetByUsername(username string) (*entities.User, error) 
 }
 
 // Update updates a user
-func (r *userRepository) Update(user *entities.User) error {
+func (r *userRepository) Update(user *models.User) error {
 	query := `UPDATE users SET username = $1, email = $2, is_active = $3, last_login = $4, updated_at = $5 WHERE id = $6`
 
 	_, err := r.db.Exec(query, user.Username, user.Email, user.IsActive, user.LastLogin, user.UpdatedAt, user.ID)

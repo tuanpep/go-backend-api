@@ -3,7 +3,7 @@ package repositories
 import (
 	"database/sql"
 
-	"go-backend-api/internal/domain/entities"
+	"go-backend-api/internal/models"
 	"go-backend-api/internal/pkg/errors"
 
 	"github.com/google/uuid"
@@ -15,12 +15,12 @@ type postRepository struct {
 }
 
 // NewPostRepository creates a new post repository
-func NewPostRepository(db *sql.DB) entities.PostRepository {
+func NewPostRepository(db *sql.DB) models.PostRepository {
 	return &postRepository{db: db}
 }
 
 // Create creates a new post
-func (r *postRepository) Create(post *entities.Post) error {
+func (r *postRepository) Create(post *models.Post) error {
 	query := `INSERT INTO posts (title, content, author_id, created_at, updated_at) 
 			  VALUES ($1, $2, $3, $4, $5) RETURNING id`
 
@@ -33,8 +33,8 @@ func (r *postRepository) Create(post *entities.Post) error {
 }
 
 // GetByID gets a post by ID
-func (r *postRepository) GetByID(id uuid.UUID) (*entities.Post, error) {
-	post := &entities.Post{}
+func (r *postRepository) GetByID(id uuid.UUID) (*models.Post, error) {
+	post := &models.Post{}
 	query := `SELECT id, title, content, author_id, created_at, updated_at FROM posts WHERE id = $1`
 
 	err := r.db.QueryRow(query, id).Scan(
@@ -52,7 +52,7 @@ func (r *postRepository) GetByID(id uuid.UUID) (*entities.Post, error) {
 }
 
 // GetByAuthorID gets posts by author ID
-func (r *postRepository) GetByAuthorID(authorID uuid.UUID, limit, offset int) ([]*entities.Post, error) {
+func (r *postRepository) GetByAuthorID(authorID uuid.UUID, limit, offset int) ([]*models.Post, error) {
 	query := `SELECT id, title, content, author_id, created_at, updated_at 
 			  FROM posts WHERE author_id = $1 
 			  ORDER BY created_at DESC LIMIT $2 OFFSET $3`
@@ -63,9 +63,9 @@ func (r *postRepository) GetByAuthorID(authorID uuid.UUID, limit, offset int) ([
 	}
 	defer rows.Close()
 
-	var posts []*entities.Post
+	var posts []*models.Post
 	for rows.Next() {
-		post := &entities.Post{}
+		post := &models.Post{}
 		err := rows.Scan(
 			&post.ID, &post.Title, &post.Content, &post.AuthorID, &post.CreatedAt, &post.UpdatedAt,
 		)
@@ -79,7 +79,7 @@ func (r *postRepository) GetByAuthorID(authorID uuid.UUID, limit, offset int) ([
 }
 
 // GetAll gets all posts
-func (r *postRepository) GetAll(limit, offset int) ([]*entities.Post, error) {
+func (r *postRepository) GetAll(limit, offset int) ([]*models.Post, error) {
 	query := `SELECT id, title, content, author_id, created_at, updated_at 
 			  FROM posts ORDER BY created_at DESC LIMIT $1 OFFSET $2`
 
@@ -89,9 +89,9 @@ func (r *postRepository) GetAll(limit, offset int) ([]*entities.Post, error) {
 	}
 	defer rows.Close()
 
-	var posts []*entities.Post
+	var posts []*models.Post
 	for rows.Next() {
-		post := &entities.Post{}
+		post := &models.Post{}
 		err := rows.Scan(
 			&post.ID, &post.Title, &post.Content, &post.AuthorID, &post.CreatedAt, &post.UpdatedAt,
 		)
@@ -105,7 +105,7 @@ func (r *postRepository) GetAll(limit, offset int) ([]*entities.Post, error) {
 }
 
 // GetAllWithAuthor gets all posts with author information
-func (r *postRepository) GetAllWithAuthor(limit, offset int) ([]*entities.Post, error) {
+func (r *postRepository) GetAllWithAuthor(limit, offset int) ([]*models.Post, error) {
 	query := `SELECT p.id, p.title, p.content, p.author_id, p.created_at, p.updated_at,
 			  u.id, u.username, u.email, u.created_at, u.updated_at
 			  FROM posts p
@@ -118,10 +118,10 @@ func (r *postRepository) GetAllWithAuthor(limit, offset int) ([]*entities.Post, 
 	}
 	defer rows.Close()
 
-	var posts []*entities.Post
+	var posts []*models.Post
 	for rows.Next() {
-		post := &entities.Post{}
-		author := &entities.User{}
+		post := &models.Post{}
+		author := &models.User{}
 
 		err := rows.Scan(
 			&post.ID, &post.Title, &post.Content, &post.AuthorID, &post.CreatedAt, &post.UpdatedAt,
@@ -139,7 +139,7 @@ func (r *postRepository) GetAllWithAuthor(limit, offset int) ([]*entities.Post, 
 }
 
 // Update updates a post
-func (r *postRepository) Update(post *entities.Post) error {
+func (r *postRepository) Update(post *models.Post) error {
 	query := `UPDATE posts SET title = $1, content = $2, is_published = $3, updated_at = $4 WHERE id = $5`
 
 	_, err := r.db.Exec(query, post.Title, post.Content, post.IsPublished, post.UpdatedAt, post.ID)
@@ -163,7 +163,7 @@ func (r *postRepository) Delete(id uuid.UUID) error {
 }
 
 // GetPublished gets published posts
-func (r *postRepository) GetPublished(limit, offset int) ([]*entities.Post, error) {
+func (r *postRepository) GetPublished(limit, offset int) ([]*models.Post, error) {
 	query := `SELECT id, title, content, author_id, is_published, created_at, updated_at 
 			  FROM posts WHERE is_published = true 
 			  ORDER BY created_at DESC LIMIT $1 OFFSET $2`
@@ -174,9 +174,9 @@ func (r *postRepository) GetPublished(limit, offset int) ([]*entities.Post, erro
 	}
 	defer rows.Close()
 
-	var posts []*entities.Post
+	var posts []*models.Post
 	for rows.Next() {
-		post := &entities.Post{}
+		post := &models.Post{}
 		err := rows.Scan(
 			&post.ID, &post.Title, &post.Content, &post.AuthorID, &post.IsPublished, &post.CreatedAt, &post.UpdatedAt,
 		)

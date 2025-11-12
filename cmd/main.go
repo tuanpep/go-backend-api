@@ -2,11 +2,11 @@ package main
 
 import (
 	"go-backend-api/docs"
-	"go-backend-api/internal/app/config"
-	"go-backend-api/internal/app/logger"
-	"go-backend-api/internal/application/handlers"
-	"go-backend-api/internal/application/repositories"
-	"go-backend-api/internal/application/services"
+	"go-backend-api/internal/config"
+	"go-backend-api/internal/handlers"
+	"go-backend-api/internal/logger"
+	"go-backend-api/internal/repositories"
+	"go-backend-api/internal/services"
 	"go-backend-api/internal/database"
 	"go-backend-api/internal/middleware"
 	"go-backend-api/internal/pkg/auth"

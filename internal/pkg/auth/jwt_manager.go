@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"go-backend-api/internal/domain/entities"
+	"go-backend-api/internal/models"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -43,7 +43,7 @@ func NewJWTManager(accessSecret, refreshSecret, issuer, audience string, accessD
 }
 
 // GenerateTokenPair generates both access and refresh tokens
-func (j *JWTManager) GenerateTokenPair(user *entities.User) (*TokenPair, error) {
+func (j *JWTManager) GenerateTokenPair(user *models.User) (*TokenPair, error) {
 	// Generate unique token ID for tracking
 	tokenID, err := generateTokenID()
 	if err != nil {
@@ -71,8 +71,8 @@ func (j *JWTManager) GenerateTokenPair(user *entities.User) (*TokenPair, error) 
 }
 
 // generateAccessToken creates an access token
-func (j *JWTManager) generateAccessToken(user *entities.User, tokenID string) (string, error) {
-	claims := &entities.TokenClaims{
+func (j *JWTManager) generateAccessToken(user *models.User, tokenID string) (string, error) {
+	claims := &models.TokenClaims{
 		UserID:   user.ID,
 		Username: user.Username,
 		TokenID:  tokenID,
@@ -95,8 +95,8 @@ func (j *JWTManager) generateAccessToken(user *entities.User, tokenID string) (s
 }
 
 // generateRefreshToken creates a refresh token
-func (j *JWTManager) generateRefreshToken(user *entities.User, tokenID string) (string, error) {
-	claims := &entities.TokenClaims{
+func (j *JWTManager) generateRefreshToken(user *models.User, tokenID string) (string, error) {
+	claims := &models.TokenClaims{
 		UserID:   user.ID,
 		Username: user.Username,
 		TokenID:  tokenID,
@@ -119,17 +119,17 @@ func (j *JWTManager) generateRefreshToken(user *entities.User, tokenID string) (
 }
 
 // ValidateAccessToken validates an access token
-func (j *JWTManager) ValidateAccessToken(tokenString string) (*entities.TokenClaims, error) {
+func (j *JWTManager) ValidateAccessToken(tokenString string) (*models.TokenClaims, error) {
 	return j.validateToken(tokenString, j.accessSecretKey, "access")
 }
 
 // ValidateRefreshToken validates a refresh token
-func (j *JWTManager) ValidateRefreshToken(tokenString string) (*entities.TokenClaims, error) {
+func (j *JWTManager) ValidateRefreshToken(tokenString string) (*models.TokenClaims, error) {
 	return j.validateToken(tokenString, j.refreshSecretKey, "refresh")
 }
 
 // validateToken validates a JWT token
-func (j *JWTManager) validateToken(tokenString, secretKey, expectedType string) (*entities.TokenClaims, error) {
+func (j *JWTManager) validateToken(tokenString, secretKey, expectedType string) (*models.TokenClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Validate signing method
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -190,7 +190,7 @@ func (j *JWTManager) validateToken(tokenString, secretKey, expectedType string) 
 		return nil, fmt.Errorf("invalid token_id in token")
 	}
 
-	return &entities.TokenClaims{
+	return &models.TokenClaims{
 		UserID:   userID,
 		Username: username,
 		TokenID:  tokenID,
@@ -199,7 +199,7 @@ func (j *JWTManager) validateToken(tokenString, secretKey, expectedType string) 
 }
 
 // RefreshAccessToken generates a new access token from a refresh token
-func (j *JWTManager) RefreshAccessToken(refreshTokenString string, user *entities.User) (*TokenPair, error) {
+func (j *JWTManager) RefreshAccessToken(refreshTokenString string, user *models.User) (*TokenPair, error) {
 	// Validate refresh token
 	claims, err := j.ValidateRefreshToken(refreshTokenString)
 	if err != nil {

@@ -3,7 +3,7 @@ package services
 import (
 	"time"
 
-	"go-backend-api/internal/domain/entities"
+	"go-backend-api/internal/models"
 	"go-backend-api/internal/pkg/errors"
 	"go-backend-api/internal/pkg/validation"
 
@@ -12,13 +12,13 @@ import (
 
 // postService implements PostService interface
 type postService struct {
-	postRepo  entities.PostRepository
-	userRepo  entities.UserRepository
+	postRepo  models.PostRepository
+	userRepo  models.UserRepository
 	validator *validation.Validator
 }
 
 // NewPostService creates a new post service
-func NewPostService(postRepo entities.PostRepository, userRepo entities.UserRepository) entities.PostService {
+func NewPostService(postRepo models.PostRepository, userRepo models.UserRepository) models.PostService {
 	return &postService{
 		postRepo:  postRepo,
 		userRepo:  userRepo,
@@ -27,7 +27,7 @@ func NewPostService(postRepo entities.PostRepository, userRepo entities.UserRepo
 }
 
 // CreatePost creates a new post
-func (s *postService) CreatePost(authorID uuid.UUID, req *entities.CreatePostRequest) (*entities.Post, error) {
+func (s *postService) CreatePost(authorID uuid.UUID, req *models.CreatePostRequest) (*models.Post, error) {
 	// Validate request
 	if err := s.validator.Validate(req); err != nil {
 		return nil, errors.WrapErrorWithCode(err, 400, "Validation failed")
@@ -43,7 +43,7 @@ func (s *postService) CreatePost(authorID uuid.UUID, req *entities.CreatePostReq
 	}
 
 	// Create post
-	post := &entities.Post{
+	post := &models.Post{
 		Title:     req.Title,
 		Content:   req.Content,
 		AuthorID:  authorID,
@@ -59,7 +59,7 @@ func (s *postService) CreatePost(authorID uuid.UUID, req *entities.CreatePostReq
 }
 
 // GetPostByID gets a post by ID
-func (s *postService) GetPostByID(id uuid.UUID) (*entities.Post, error) {
+func (s *postService) GetPostByID(id uuid.UUID) (*models.Post, error) {
 	post, err := s.postRepo.GetByID(id)
 	if err != nil {
 		return nil, errors.WrapError(err, "Failed to get post")
@@ -82,7 +82,7 @@ func (s *postService) GetPostByID(id uuid.UUID) (*entities.Post, error) {
 }
 
 // GetPosts gets all posts with pagination
-func (s *postService) GetPosts(page, perPage int) ([]*entities.Post, int, error) {
+func (s *postService) GetPosts(page, perPage int) ([]*models.Post, int, error) {
 	offset := (page - 1) * perPage
 
 	posts, err := s.postRepo.GetAllWithAuthor(perPage, offset)
@@ -106,7 +106,7 @@ func (s *postService) GetPosts(page, perPage int) ([]*entities.Post, int, error)
 }
 
 // GetPostsByAuthor gets posts by author with pagination
-func (s *postService) GetPostsByAuthor(authorID uuid.UUID, page, perPage int) ([]*entities.Post, int, error) {
+func (s *postService) GetPostsByAuthor(authorID uuid.UUID, page, perPage int) ([]*models.Post, int, error) {
 	offset := (page - 1) * perPage
 
 	posts, err := s.postRepo.GetByAuthorID(authorID, perPage, offset)
@@ -135,7 +135,7 @@ func (s *postService) GetPostsByAuthor(authorID uuid.UUID, page, perPage int) ([
 }
 
 // UpdatePost updates a post
-func (s *postService) UpdatePost(id, authorID uuid.UUID, req *entities.UpdatePostRequest) (*entities.Post, error) {
+func (s *postService) UpdatePost(id, authorID uuid.UUID, req *models.UpdatePostRequest) (*models.Post, error) {
 	// Validate request
 	if err := s.validator.Validate(req); err != nil {
 		return nil, errors.WrapErrorWithCode(err, 400, "Validation failed")
@@ -208,7 +208,7 @@ func (s *postService) DeletePost(id, authorID uuid.UUID) error {
 }
 
 // GetPublishedPosts gets published posts with pagination
-func (s *postService) GetPublishedPosts(page, perPage int) ([]*entities.Post, int, error) {
+func (s *postService) GetPublishedPosts(page, perPage int) ([]*models.Post, int, error) {
 	offset := (page - 1) * perPage
 
 	posts, err := s.postRepo.GetPublished(perPage, offset)
@@ -281,6 +281,6 @@ func (s *postService) UnpublishPost(id, authorID uuid.UUID) error {
 }
 
 // ValidatePost validates a post entity
-func (s *postService) ValidatePost(post *entities.Post) error {
+func (s *postService) ValidatePost(post *models.Post) error {
 	return s.validator.Validate(post)
 }

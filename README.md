@@ -20,27 +20,26 @@ go-backend-api/
 ├── cmd/
 │   └── main.go                    # Application entry point
 ├── internal/
-│   ├── app/
-│   │   └── config/
-│   │       └── config.go          # Configuration management
-│   ├── application/
-│   │   ├── handlers/              # HTTP handlers
-│   │   │   ├── auth_handler.go
-│   │   │   ├── post_handler.go
-│   │   │   └── user_handler.go
-│   │   ├── repositories/          # Data access layer
-│   │   │   ├── post_repository.go
-│   │   │   └── user_repository.go
-│   │   └── services/              # Business logic layer
-│   │       ├── post_service.go
-│   │       └── user_service.go
+│   ├── config/
+│   │   └── config.go              # Configuration management
+│   ├── logger/
+│   │   └── logger.go              # Logging utilities
+│   ├── handlers/                 # HTTP handlers
+│   │   ├── auth_handler.go
+│   │   ├── post_handler.go
+│   │   └── user_handler.go
+│   ├── services/                  # Business logic layer
+│   │   ├── post_service.go
+│   │   └── user_service.go
+│   ├── repositories/              # Data access layer
+│   │   ├── post_repository.go
+│   │   └── user_repository.go
+│   ├── models/                    # Domain models/entities
+│   │   ├── post.go
+│   │   └── user.go
 │   ├── database/
 │   │   ├── database.go            # Database connection
 │   │   └── migrations_v2.sql      # Database migrations
-│   ├── domain/
-│   │   └── entities/              # Domain entities
-│   │       ├── post.go
-│   │       └── user.go
 │   ├── middleware/                # HTTP middleware
 │   │   ├── auth.go
 │   │   ├── cors.go
@@ -293,10 +292,10 @@ make help           # Show all commands
 ```
 
 ### Adding New Features
-1. Define entities in `internal/domain/entities/`
-2. Create repositories in `internal/application/repositories/`
-3. Create services in `internal/application/services/`
-4. Create handlers in `internal/application/handlers/`
+1. Define models in `internal/models/`
+2. Create repositories in `internal/repositories/`
+3. Create services in `internal/services/`
+4. Create handlers in `internal/handlers/`
 5. Add routes in `cmd/main.go`
 6. Update database schema in `internal/database/migrations_v2.sql`
 

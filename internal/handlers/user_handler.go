@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"go-backend-api/internal/domain/entities"
+	"go-backend-api/internal/models"
 	"go-backend-api/internal/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -10,11 +10,11 @@ import (
 
 // UserHandler handles user requests
 type UserHandler struct {
-	userService entities.UserService
+	userService models.UserService
 }
 
 // NewUserHandler creates a new user handler
-func NewUserHandler(userService entities.UserService) *UserHandler {
+func NewUserHandler(userService models.UserService) *UserHandler {
 	return &UserHandler{
 		userService: userService,
 	}
@@ -27,7 +27,7 @@ func NewUserHandler(userService entities.UserService) *UserHandler {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Success      200  {object}  response.Response{data=entities.User}
+// @Success      200  {object}  response.Response{data=models.User}
 // @Failure      401  {object}  response.Response
 // @Failure      404  {object}  response.Response
 // @Failure      500  {object}  response.Response
@@ -61,7 +61,7 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Success      200  {object}  response.Response{data=entities.User}
+// @Success      200  {object}  response.Response{data=models.User}
 // @Failure      401  {object}  response.Response
 // @Failure      404  {object}  response.Response
 // @Failure      500  {object}  response.Response
@@ -95,8 +95,8 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        request  body      entities.UpdateUserRequest  true  "User update data"
-// @Success      200      {object}  response.Response{data=entities.User}
+// @Param        request  body      models.UpdateUserRequest  true  "User update data"
+// @Success      200      {object}  response.Response{data=models.User}
 // @Failure      400      {object}  response.Response
 // @Failure      401      {object}  response.Response
 // @Failure      500      {object}  response.Response
@@ -114,7 +114,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	var req entities.UpdateUserRequest
+	var req models.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request data")
 		return
