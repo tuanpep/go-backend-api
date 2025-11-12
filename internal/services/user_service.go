@@ -14,17 +14,19 @@ import (
 
 // userService implements UserService interface
 type userService struct {
-	userRepo  models.UserRepository
-	jwtMgr    *auth.JWTManager
-	validator *validation.Validator
+	userRepo         models.UserRepository
+	refreshTokenRepo models.RefreshTokenRepository
+	jwtMgr           *auth.JWTManager
+	validator        *validation.Validator
 }
 
 // NewUserService creates a new user service
-func NewUserService(userRepo models.UserRepository, jwtMgr *auth.JWTManager) models.UserService {
+func NewUserService(userRepo models.UserRepository, refreshTokenRepo models.RefreshTokenRepository, jwtMgr *auth.JWTManager) models.UserService {
 	return &userService{
-		userRepo:  userRepo,
-		jwtMgr:    jwtMgr,
-		validator: validation.NewValidator(),
+		userRepo:         userRepo,
+		refreshTokenRepo: refreshTokenRepo,
+		jwtMgr:           jwtMgr,
+		validator:        validation.NewValidator(),
 	}
 }
 
@@ -180,32 +182,52 @@ func (s *userService) DeleteUser(id uuid.UUID) error {
 	return nil
 }
 
-// RefreshToken refreshes an access token using a refresh token
+// RefreshToken refreshes an access token using a refresh token with rotation
 func (s *userService) RefreshToken(req *models.RefreshTokenRequest) (*models.LoginResponse, error) {
-	// Validate refresh token
+	// Step 1: Validate refresh token JWT signature and claims
 	claims, err := s.jwtMgr.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
-		return nil, errors.WrapError(err, "Invalid refresh token")
+		// Generic error message - don't reveal token state
+		return nil, errors.NewErrorWithCode(401, "Invalid refresh token")
 	}
 
-	// Get user
+	// Step 2: Get user
 	user, err := s.userRepo.GetByID(claims.UserID)
 	if err != nil {
 		return nil, errors.WrapError(err, "Failed to get user")
 	}
 	if user == nil {
-		return nil, errors.NewErrorWithCode(404, "User not found")
+		// Generic error message - don't reveal user existence
+		return nil, errors.NewErrorWithCode(401, "Invalid refresh token")
 	}
 
-	// Check if user is active
+	// Step 3: Check if user is active
 	if !user.IsActive {
 		return nil, errors.NewErrorWithCode(403, "Account is deactivated")
 	}
 
-	// Generate new token pair
+	// Step 4: Generate new token pair (with new token_id)
 	tokenPair, err := s.jwtMgr.GenerateTokenPair(user)
 	if err != nil {
 		return nil, errors.WrapError(err, "Failed to generate token")
+	}
+
+	// Step 5: Extract token_id from new refresh token
+	newRefreshClaims, err := s.jwtMgr.ValidateRefreshToken(tokenPair.RefreshToken)
+	if err != nil {
+		return nil, errors.WrapError(err, "Failed to validate generated refresh token")
+	}
+
+	// Step 6: Hash new refresh token
+	tokenHash := auth.HashRefreshToken(tokenPair.RefreshToken)
+	expiresAt := time.Now().Add(s.jwtMgr.GetRefreshDuration())
+
+	// Step 7: Atomically rotate token (validate old token with lock, create new, revoke old)
+	// This prevents race conditions and ensures atomicity
+	err = s.refreshTokenRepo.RotateToken(claims.TokenID, newRefreshClaims.TokenID, tokenHash, user.ID, expiresAt)
+	if err != nil {
+		// Generic error message - don't reveal why token is invalid
+		return nil, errors.NewErrorWithCode(401, "Invalid refresh token")
 	}
 
 	return &models.LoginResponse{
@@ -217,15 +239,13 @@ func (s *userService) RefreshToken(req *models.RefreshTokenRequest) (*models.Log
 	}, nil
 }
 
-// Logout logs out a user (in a real implementation, you might want to blacklist the token)
+// Logout logs out a user by revoking the refresh token
 func (s *userService) Logout(userID uuid.UUID, tokenID string) error {
-	// In a real implementation, you would:
-	// 1. Add the token to a blacklist
-	// 2. Remove refresh tokens from database
-	// 3. Log the logout event
+	// Revoke the refresh token associated with this token_id
+	if err := s.refreshTokenRepo.Revoke(tokenID); err != nil {
+		return errors.WrapError(err, "Failed to revoke refresh token")
+	}
 
-	// For now, we'll just log the event
-	// In a production system, you'd want to implement proper token revocation
 	return nil
 }
 
@@ -306,6 +326,23 @@ func (s *userService) AuthenticateUser(req *models.LoginRequest) (*models.LoginR
 	tokenPair, err := s.jwtMgr.GenerateTokenPair(user)
 	if err != nil {
 		return nil, errors.WrapError(err, "Failed to generate token")
+	}
+
+	// Extract token_id from refresh token to store in database
+	refreshClaims, err := s.jwtMgr.ValidateRefreshToken(tokenPair.RefreshToken)
+	if err != nil {
+		return nil, errors.WrapError(err, "Failed to validate generated refresh token")
+	}
+
+	// Hash refresh token for storage
+	tokenHash := auth.HashRefreshToken(tokenPair.RefreshToken)
+
+	// Calculate expiration time from refresh token duration
+	expiresAt := time.Now().Add(s.jwtMgr.GetRefreshDuration())
+
+	// Store refresh token in database
+	if err := s.refreshTokenRepo.Create(refreshClaims.TokenID, tokenHash, user.ID, expiresAt); err != nil {
+		return nil, errors.WrapError(err, "Failed to store refresh token")
 	}
 
 	return &models.LoginResponse{

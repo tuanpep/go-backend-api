@@ -76,3 +76,31 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	response.Success(c, loginResp)
 }
+
+// Refresh handles refresh token requests
+// @Summary      Refresh access token
+// @Description  Refresh access token using a valid refresh token
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      models.RefreshTokenRequest  true  "Refresh token"
+// @Success      200      {object}  response.Response{data=models.LoginResponse}
+// @Failure      400      {object}  response.Response
+// @Failure      401      {object}  response.Response
+// @Failure      500      {object}  response.Response
+// @Router       /auth/refresh [post]
+func (h *AuthHandler) Refresh(c *gin.Context) {
+	var req models.RefreshTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request data")
+		return
+	}
+
+	loginResp, err := h.userService.RefreshToken(&req)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+
+	response.Success(c, loginResp)
+}

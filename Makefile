@@ -20,7 +20,7 @@ YELLOW=\033[1;33m
 BLUE=\033[0;34m
 NC=\033[0m # No Color
 
-.PHONY: all build clean test deps fmt run run-once dev watch setup stop logs help swagger
+.PHONY: all build clean test deps fmt run run-once dev watch setup stop logs help openapi
 
 # Default target
 all: clean deps fmt test build
@@ -116,21 +116,46 @@ test-api:
 	chmod +x scripts/test_api.sh
 	./scripts/test_api.sh
 
-# Generate Swagger documentation
-swagger:
-	@echo "$(BLUE)Generating Swagger documentation...$(NC)"
-	@if command -v swag > /dev/null 2>&1; then \
-		swag init -g $(MAIN_PATH) --parseInternal; \
-		echo "$(GREEN)Swagger documentation generated!$(NC)"; \
-	elif [ -f $$(go env GOPATH)/bin/swag ]; then \
-		$$(go env GOPATH)/bin/swag init -g $(MAIN_PATH) --parseInternal; \
-		echo "$(GREEN)Swagger documentation generated!$(NC)"; \
-	else \
-		echo "$(YELLOW)Swag not found. Installing...$(NC)"; \
-		go install github.com/swaggo/swag/cmd/swag@latest; \
-		$$(go env GOPATH)/bin/swag init -g $(MAIN_PATH) --parseInternal; \
-		echo "$(GREEN)Swagger documentation generated!$(NC)"; \
+# Generate OpenAPI types and validate setup
+openapi:
+	@echo "$(BLUE)Setting up OpenAPI...$(NC)"
+	@echo "$(BLUE)1. Checking oapi-codegen installation...$(NC)"
+	@if ! command -v oapi-codegen > /dev/null 2>&1 && [ ! -f $$(go env GOPATH)/bin/oapi-codegen ]; then \
+		echo "$(YELLOW)   Installing oapi-codegen...$(NC)"; \
+		go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest; \
 	fi
+	@echo "$(BLUE)2. Validating OpenAPI specification...$(NC)"
+	@if [ ! -f api/openapi.yaml ]; then \
+		echo "$(RED)   Error: api/openapi.yaml not found!$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)   ✓ OpenAPI spec found$(NC)"
+	@echo "$(BLUE)3. Generating Go types from OpenAPI spec...$(NC)"
+	@if command -v oapi-codegen > /dev/null 2>&1; then \
+		oapi-codegen -generate types -package api api/openapi.yaml > api/types.go; \
+	elif [ -f $$(go env GOPATH)/bin/oapi-codegen ]; then \
+		$$(go env GOPATH)/bin/oapi-codegen -generate types -package api api/openapi.yaml > api/types.go; \
+	else \
+		echo "$(RED)   Error: oapi-codegen not found after installation$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)   ✓ Types generated in api/types.go$(NC)"
+	@echo "$(BLUE)4. Verifying generated files...$(NC)"
+	@if [ ! -f api/types.go ]; then \
+		echo "$(RED)   Error: api/types.go was not generated!$(NC)"; \
+		exit 1; \
+	fi
+	@if [ ! -f api/serve.go ]; then \
+		echo "$(YELLOW)   Warning: api/serve.go not found (should be created manually)$(NC)"; \
+	fi
+	@echo "$(GREEN)   ✓ All files verified$(NC)"
+	@echo "$(GREEN)OpenAPI setup complete!$(NC)"
+	@echo "$(YELLOW)Note:$(NC)"
+	@echo "  - OpenAPI spec: api/openapi.yaml (edit this file to update API)"
+	@echo "  - Generated types: api/types.go (auto-generated, do not edit)"
+	@echo "  - Server handler: api/serve.go (serves the OpenAPI spec)"
+	@echo "  - View docs: http://localhost:8080/docs (HTML documentation)"
+	@echo "  - Raw spec: http://localhost:8080/openapi.yaml (download YAML)"
 
 # Show help
 help:
@@ -141,7 +166,7 @@ help:
 	@echo "  clean     - Clean build artifacts"
 	@echo "  deps      - Download and update dependencies"
 	@echo "  fmt       - Format code"
-	@echo "  swagger   - Generate Swagger documentation"
+	@echo "  openapi   - Generate OpenAPI types and validate setup"
 	@echo ""
 	@echo "$(GREEN)Run Commands:$(NC)"
 	@echo "  run       - Run with hot-reload (auto-restart on file changes)"
@@ -167,5 +192,5 @@ help:
 	@echo "  make setup    # Complete setup"
 	@echo "  make run      # Run with hot-reload (recommended for development)"
 	@echo "  make run-once # Build and run once"
-	@echo "  make swagger  # Generate Swagger documentation"
+	@echo "  make openapi  # Generate OpenAPI types and validate setup"
 	@echo "  make test-api # Test the API"

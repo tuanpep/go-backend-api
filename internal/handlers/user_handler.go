@@ -219,3 +219,50 @@ func (h *UserHandler) DeactivateUser(c *gin.Context) {
 
 	response.SuccessWithMessage(c, "User deactivated successfully", nil)
 }
+
+// Logout logs out the current user
+// @Summary      Logout user
+// @Description  Logout the authenticated user by revoking refresh token
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Router       /users/logout [post]
+func (h *UserHandler) Logout(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	userUUID, ok := userID.(uuid.UUID)
+	if !ok {
+		response.Unauthorized(c, "Invalid user ID")
+		return
+	}
+
+	// Extract token_id from claims
+	claimsInterface, exists := c.Get("claims")
+	if !exists {
+		response.Unauthorized(c, "Token claims not found")
+		return
+	}
+
+	claims, ok := claimsInterface.(*models.TokenClaims)
+	if !ok {
+		response.Unauthorized(c, "Invalid token claims")
+		return
+	}
+
+	// Revoke refresh token
+	err := h.userService.Logout(userUUID, claims.TokenID)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+
+	response.SuccessWithMessage(c, "Logged out successfully", nil)
+}

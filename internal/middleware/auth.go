@@ -40,6 +40,7 @@ func AuthMiddleware(jwtManager *auth.JWTManager) gin.HandlerFunc {
 		// Set user information in context
 		c.Set("user_id", claims.UserID)
 		c.Set("username", claims.Username)
+		c.Set("token_id", claims.TokenID)
 		c.Set("claims", claims)
 
 		c.Next()

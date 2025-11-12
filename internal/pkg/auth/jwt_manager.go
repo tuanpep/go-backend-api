@@ -2,6 +2,7 @@ package auth
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -198,23 +199,6 @@ func (j *JWTManager) validateToken(tokenString, secretKey, expectedType string) 
 	}, nil
 }
 
-// RefreshAccessToken generates a new access token from a refresh token
-func (j *JWTManager) RefreshAccessToken(refreshTokenString string, user *models.User) (*TokenPair, error) {
-	// Validate refresh token
-	claims, err := j.ValidateRefreshToken(refreshTokenString)
-	if err != nil {
-		return nil, fmt.Errorf("invalid refresh token: %w", err)
-	}
-
-	// Verify user ID matches
-	if claims.UserID != user.ID {
-		return nil, fmt.Errorf("token user mismatch")
-	}
-
-	// Generate new token pair with same token ID
-	return j.GenerateTokenPair(user)
-}
-
 // generateTokenID generates a cryptographically secure random token ID
 func generateTokenID() (string, error) {
 	bytes := make([]byte, 16)
@@ -224,11 +208,13 @@ func generateTokenID() (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-// ExtractTokenID extracts token ID from context (for logout tracking)
-func ExtractTokenID(claims jwt.MapClaims) (string, error) {
-	tokenID, ok := claims["token_id"].(string)
-	if !ok {
-		return "", fmt.Errorf("token_id not found in claims")
-	}
-	return tokenID, nil
+// GetRefreshDuration returns the refresh token duration
+func (j *JWTManager) GetRefreshDuration() time.Duration {
+	return j.refreshDuration
+}
+
+// HashRefreshToken hashes a refresh token using SHA256
+func HashRefreshToken(token string) string {
+	hash := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(hash[:])
 }
