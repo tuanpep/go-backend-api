@@ -142,10 +142,16 @@ func (pp *PasswordPolicy) checkCommonPatterns(password string) error {
 		}
 	}
 
-	// Repeated patterns
-	patternRegex := regexp.MustCompile(`(.{2,})\1`)
-	if patternRegex.MatchString(password) {
-		return fmt.Errorf("password contains repeated patterns")
+	// Repeated patterns (check for substrings that repeat)
+	// Go's regexp doesn't support backreferences, so we check manually
+	for patternLen := 2; patternLen <= len(password)/2; patternLen++ {
+		for i := 0; i <= len(password)-patternLen*2; i++ {
+			pattern := password[i : i+patternLen]
+			next := password[i+patternLen : i+patternLen*2]
+			if pattern == next {
+				return fmt.Errorf("password contains repeated patterns")
+			}
+		}
 	}
 
 	return nil

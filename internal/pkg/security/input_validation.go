@@ -19,11 +19,21 @@ func NewInputValidator() *InputValidator {
 	v := validator.New()
 
 	// Register custom validators
-	v.RegisterValidation("username", validateUsername)
-	v.RegisterValidation("password", validatePassword)
-	v.RegisterValidation("email", validateEmail)
-	v.RegisterValidation("no_sql_injection", validateNoSQLInjection)
-	v.RegisterValidation("no_xss", validateNoXSS)
+	if err := v.RegisterValidation("username", validateUsername); err != nil {
+		panic("failed to register username validator: " + err.Error())
+	}
+	if err := v.RegisterValidation("password", validatePassword); err != nil {
+		panic("failed to register password validator: " + err.Error())
+	}
+	if err := v.RegisterValidation("email", validateEmail); err != nil {
+		panic("failed to register email validator: " + err.Error())
+	}
+	if err := v.RegisterValidation("no_sql_injection", validateNoSQLInjection); err != nil {
+		panic("failed to register no_sql_injection validator: " + err.Error())
+	}
+	if err := v.RegisterValidation("no_xss", validateNoXSS); err != nil {
+		panic("failed to register no_xss validator: " + err.Error())
+	}
 
 	return &InputValidator{validator: v}
 }

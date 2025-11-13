@@ -17,8 +17,12 @@ func NewValidator() *Validator {
 	v := validator.New()
 
 	// Register custom validators
-	v.RegisterValidation("username", validateUsername)
-	v.RegisterValidation("password", validatePassword)
+	if err := v.RegisterValidation("username", validateUsername); err != nil {
+		panic("failed to register username validator: " + err.Error())
+	}
+	if err := v.RegisterValidation("password", validatePassword); err != nil {
+		panic("failed to register password validator: " + err.Error())
+	}
 
 	return &Validator{validator: v}
 }

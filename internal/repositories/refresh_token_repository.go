@@ -127,7 +127,11 @@ func (r *refreshTokenRepository) RotateToken(oldTokenID, newTokenID, newTokenHas
 	if err != nil {
 		return errors.WrapError(err, "Failed to begin transaction")
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			// Log error but don't fail - transaction may already be committed
+		}
+	}()
 
 	// First, validate and lock the old token row
 	// Use SELECT FOR UPDATE to lock the row and prevent concurrent access
