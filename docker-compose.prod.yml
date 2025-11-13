@@ -43,7 +43,7 @@ services:
       - PORT=8080
       - HOST=0.0.0.0
       - ENVIRONMENT=production
-      - DATABASE_URL=postgres://go_user:${DB_PASSWORD}@postgres:5432/go_learning_db?sslmode=disable
+      - DATABASE_URL=postgres://go_user:${DB_PASSWORD_URL_ENCODED}@postgres:5432/go_learning_db?sslmode=disable
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - JWT_ISSUER=${JWT_ISSUER:-go-backend-api}
@@ -77,4 +77,3 @@ volumes:
 networks:
   app-network:
     driver: bridge
-

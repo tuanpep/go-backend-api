@@ -23,6 +23,14 @@ go.work
 .env
 .env.local
 .env.production
+.env.*.local
+
+# Docker volumes
+postgres_data/
+
+# Logs
+*.log
+logs/
 
 # IDE files
 .vscode/
@@ -39,10 +47,6 @@ go.work
 .Trashes
 ehthumbs.db
 Thumbs.db
-
-# Logs
-*.log
-logs/
 
 # Database
 *.db
@@ -63,4 +67,3 @@ temp/
 
 # Air hot-reload
 build-errors.log
-tmp/
