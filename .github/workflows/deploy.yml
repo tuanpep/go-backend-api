@@ -50,6 +50,10 @@ jobs:
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
+      - name: Copy docker-compose file to server
+        run: |
+          scp docker-compose.prod.yml ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/opt/go-backend-api/docker-compose.prod.yml
+
       - name: Deploy
         env:
           API_PORT: ${{ secrets.API_PORT || '8080' }}
@@ -67,13 +71,13 @@ jobs:
             echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
             docker pull $IMAGE || docker pull ${{ secrets.DOCKER_USERNAME }}/go-backend-api:latest
             
-            docker-compose -f docker-compose.prod.yml down || true
+            docker compose -f docker-compose.prod.yml down || true
             
             sed -i.tmp "s|^    build:.*|    image: $IMAGE|" docker-compose.prod.yml
             sed -i.tmp '/^      context:/d; /^      dockerfile:/d; /^      args:/,/^        GO_VERSION:/d' docker-compose.prod.yml
             rm -f docker-compose.prod.yml.tmp
             
-            docker-compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml up -d
             
             for i in {1..30}; do
               if curl -f http://localhost:${API_PORT}/api/v1/health > /dev/null 2>&1; then
@@ -83,7 +87,7 @@ jobs:
               sleep 2
             done
             echo "❌ Health check failed"
-            docker-compose -f docker-compose.prod.yml logs
+            docker compose -f docker-compose.prod.yml logs
             exit 1
           EOF
 
@@ -92,6 +96,6 @@ jobs:
           API_PORT: ${{ secrets.API_PORT || '8080' }}
         run: |
           ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << EOF
-            docker-compose -f /opt/go-backend-api/docker-compose.prod.yml ps
+            docker compose -f /opt/go-backend-api/docker-compose.prod.yml ps
             curl -f http://localhost:${API_PORT}/api/v1/health
           EOF
