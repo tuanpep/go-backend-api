@@ -1,7 +1,10 @@
 name: Deploy
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Build and Push Docker Image"]
+    types:
+      - completed
     branches: [ main ]
   workflow_dispatch:
     inputs:
@@ -27,12 +30,16 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'production' }}
     timeout-minutes: 30
-    # Deploy should run after docker image is built and pushed
-    # Note: This requires the docker-build-push workflow to complete first
+    if: |
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          # If triggered by workflow_run, checkout the commit from that workflow
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
 
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.9.0
