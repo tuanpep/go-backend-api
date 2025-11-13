@@ -3,22 +3,18 @@ name: Build and Push Docker Image
 on:
   workflow_run:
     workflows: ["CI"]
-    types:
-      - completed
-    branches: [ main ]
+    types: [completed]
+    branches: [main]
   push:
-    tags:
-      - 'v*'
+    tags: ['v*']
   workflow_dispatch:
 
 env:
   GO_VERSION: '1.24'
-  REGISTRY: docker.io
   IMAGE_NAME: go-backend-api
 
 jobs:
   build-and-push:
-    name: Build and Push Docker Image
     runs-on: ubuntu-latest
     if: |
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
@@ -29,84 +25,54 @@ jobs:
       packages: write
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          # If triggered by workflow_run, checkout the commit from that workflow
           ref: ${{ github.event.workflow_run.head_sha || github.ref }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver-opts: |
-            image=moby/buildkit:latest
-            network=host
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Extract metadata
+      - name: Set build metadata
         id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest
-
-      - name: Prepare build args
-        id: build-args
         run: |
           if [ "${{ github.ref_type }}" == "tag" ]; then
-            BUILD_VERSION="${{ github.ref_name }}"
+            TAG="${{ github.ref_name }}"
           else
-            BUILD_VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo 'dev')
+            TAG="latest"
           fi
-          echo "BUILD_VERSION=$BUILD_VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "image=${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:$TAG" >> $GITHUB_OUTPUT
+          echo "BUILD_VERSION=$TAG" >> $GITHUB_OUTPUT
           echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
           echo "VCS_REF=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Build and push Docker image
+      - name: Build and push
         id: build
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.image }},${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
           build-args: |
-            BUILD_VERSION=${{ steps.build-args.outputs.BUILD_VERSION }}
-            BUILD_DATE=${{ steps.build-args.outputs.BUILD_DATE }}
-            VCS_REF=${{ steps.build-args.outputs.VCS_REF }}
+            BUILD_VERSION=${{ steps.meta.outputs.BUILD_VERSION }}
+            BUILD_DATE=${{ steps.meta.outputs.BUILD_DATE }}
+            VCS_REF=${{ steps.meta.outputs.VCS_REF }}
             GO_VERSION=${{ env.GO_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
-          provenance: true
-          sbom: true
 
-      - name: Scan Docker image
-        uses: aquasecurity/trivy-action@master
+      - uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+          image-ref: ${{ steps.meta.outputs.image }}
           format: 'sarif'
-          output: 'trivy-image-results.sarif'
+          output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
 
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
         with:
-          sarif_file: 'trivy-image-results.sarif'
-
-      - name: Image digest
-        run: echo "Image pushed with digest ${{ steps.build.outputs.digest }}"
+          sarif_file: 'trivy-results.sarif'

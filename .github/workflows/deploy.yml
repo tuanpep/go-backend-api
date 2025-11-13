@@ -3,9 +3,8 @@ name: Deploy
 on:
   workflow_run:
     workflows: ["Build and Push Docker Image"]
-    types:
-      - completed
-    branches: [ main ]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       environment:
@@ -13,20 +12,14 @@ on:
         required: true
         default: 'production'
         type: choice
-        options:
-          - production
-          - staging
+        options: [production, staging]
       image_tag:
-        description: 'Docker image tag to deploy (leave empty for latest)'
+        description: 'Docker image tag (leave empty for latest)'
         required: false
         type: string
 
-env:
-  REGISTRY: docker.io
-
 jobs:
   deploy:
-    name: Deploy to ${{ github.event.inputs.environment || 'production' }}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'production' }}
     timeout-minutes: 30
@@ -35,23 +28,18 @@ jobs:
       github.event_name == 'workflow_dispatch'
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          # If triggered by workflow_run, checkout the commit from that workflow
           ref: ${{ github.event.workflow_run.head_sha || github.ref }}
 
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.9.0
+      - uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
 
-      - name: Add VM to known hosts
-        run: |
-          ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+      - run: ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Determine image tag
-        id: image-tag
+      - name: Set image tag
+        id: tag
         run: |
           if [ -n "${{ github.event.inputs.image_tag }}" ]; then
             TAG="${{ github.event.inputs.image_tag }}"
@@ -61,224 +49,49 @@ jobs:
             TAG="latest"
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "Using image tag: $TAG"
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Pull Docker image on VM
-        run: |
-          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << EOF
-            set -e
-            echo "Logging into Docker Hub..."
-            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin || true
-            
-            echo "Pulling image: ${{ secrets.DOCKER_USERNAME }}/go-backend-api:${{ steps.image-tag.outputs.tag }}"
-            docker pull ${{ secrets.DOCKER_USERNAME }}/go-backend-api:${{ steps.image-tag.outputs.tag }} || {
-              echo "Failed to pull image, trying latest..."
-              docker pull ${{ secrets.DOCKER_USERNAME }}/go-backend-api:latest
-            }
-          EOF
-
-      - name: Create deployment directory on VM
-        run: |
-          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
-            set -e
-            mkdir -p /opt/go-backend-api
-            mkdir -p /opt/go-backend-api/backups
-          EOF
-
-      - name: Backup current deployment
-        run: |
-          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
-            set -e
-            if docker ps -a | grep -q go-api-backend; then
-              echo "Backing up current deployment..."
-              BACKUP_DIR="/opt/go-backend-api/backups/$(date +%Y%m%d_%H%M%S)"
-              mkdir -p "$BACKUP_DIR"
-              docker ps -a --filter name=go-api-backend --format "{{.Image}}" > "$BACKUP_DIR/previous_image.txt" || true
-              echo "Backup created at $BACKUP_DIR"
-            fi
-          EOF
-
-      - name: Copy deployment files to VM
-        run: |
-          rsync -avz --delete \
-            --exclude '.git' \
-            --exclude 'node_modules' \
-            --exclude '.env*' \
-            --exclude 'tmp' \
-            --exclude 'bin' \
-            --exclude '*.log' \
-            docker-compose.prod.yml \
-            ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/opt/go-backend-api/
-
-      - name: Deploy application
+      - name: Deploy
         env:
           API_PORT: ${{ secrets.API_PORT || '8080' }}
-          DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/go-backend-api:${{ steps.image-tag.outputs.tag }}
+          IMAGE: ${{ secrets.DOCKER_USERNAME }}/go-backend-api:${{ steps.tag.outputs.tag }}
         run: |
           ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << EOF
             set -e
             cd /opt/go-backend-api
             
-            # Ensure .env.production exists
             if [ ! -f .env.production ]; then
-              echo "Error: .env.production not found on VM!"
-              echo "Please create it from env.production.example"
+              echo "Error: .env.production not found!"
               exit 1
             fi
             
-            # Stop existing containers
-            echo "Stopping existing containers..."
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+            docker pull $IMAGE || docker pull ${{ secrets.DOCKER_USERNAME }}/go-backend-api:latest
+            
             docker-compose -f docker-compose.prod.yml down || true
             
-            # Update docker-compose to use the pulled image
-            # Create a new docker-compose file with image reference instead of build
-            cat > docker-compose.prod.yml << COMPOSE_EOF
-          services:
-            postgres:
-              image: postgres:15-alpine
-              container_name: go-api-postgres
-              restart: unless-stopped
-              environment:
-                POSTGRES_DB: go_learning_db
-                POSTGRES_USER: go_user
-                POSTGRES_PASSWORD: ${DB_PASSWORD}
-                POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
-              volumes:
-                - postgres_data:/var/lib/postgresql/data
-                - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-              networks:
-                - app-network
-              healthcheck:
-                test: ["CMD-SHELL", "pg_isready -U go_user"]
-                interval: 10s
-                timeout: 5s
-                retries: 5
-              deploy:
-                resources:
-                  limits:
-                    cpus: '0.5'
-                    memory: 512M
-                  reservations:
-                    cpus: '0.25'
-                    memory: 256M
-
-            api:
-              image: ${{ secrets.DOCKER_USERNAME }}/go-backend-api:${{ steps.image-tag.outputs.tag }}
-              container_name: go-api-backend
-              restart: unless-stopped
-              ports:
-                - "${API_PORT:-8080}:8080"
-              environment:
-                - PORT=8080
-                - HOST=0.0.0.0
-                - ENVIRONMENT=production
-                - DATABASE_URL=postgres://go_user:${DB_PASSWORD}@postgres:5432/go_learning_db?sslmode=disable
-                - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
-                - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-                - JWT_ISSUER=${JWT_ISSUER:-go-backend-api}
-                - JWT_AUDIENCE=${JWT_AUDIENCE:-go-backend-api-users}
-                - LOG_LEVEL=${LOG_LEVEL:-info}
-                - DEBUG=${DEBUG:-false}
-              depends_on:
-                postgres:
-                  condition: service_healthy
-              networks:
-                - app-network
-              healthcheck:
-                test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v1/health"]
-                interval: 30s
-                timeout: 10s
-                retries: 3
-                start_period: 40s
-              deploy:
-                resources:
-                  limits:
-                    cpus: '0.5'
-                    memory: 256M
-                  reservations:
-                    cpus: '0.25'
-                    memory: 128M
-
-          volumes:
-            postgres_data:
-              driver: local
-
-          networks:
-            app-network:
-              driver: bridge
-          COMPOSE_EOF
+            sed -i.tmp "s|^    build:.*|    image: $IMAGE|" docker-compose.prod.yml
+            sed -i.tmp '/^      context:/d; /^      dockerfile:/d; /^      args:/,/^        GO_VERSION:/d' docker-compose.prod.yml
+            rm -f docker-compose.prod.yml.tmp
             
-            # Start new deployment
-            echo "Starting new deployment..."
             docker-compose -f docker-compose.prod.yml up -d
             
-            # Wait for health check
-            echo "Waiting for service to be healthy..."
             for i in {1..30}; do
-              if curl -f http://localhost:${API_PORT:-8080}/api/v1/health > /dev/null 2>&1; then
+              if curl -f http://localhost:${API_PORT}/api/v1/health > /dev/null 2>&1; then
                 echo "✅ Service is healthy!"
-                break
-              fi
-              if [ $i -eq 30 ]; then
-                echo "❌ Health check failed after 30 attempts"
-                docker-compose -f docker-compose.prod.yml logs
-                exit 1
+                exit 0
               fi
               sleep 2
             done
+            echo "❌ Health check failed"
+            docker-compose -f docker-compose.prod.yml logs
+            exit 1
           EOF
 
-      - name: Verify deployment
+      - name: Verify
         env:
           API_PORT: ${{ secrets.API_PORT || '8080' }}
         run: |
           ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << EOF
-            echo "=== Service Status ==="
-            docker-compose -f docker-compose.prod.yml ps
-            
-            echo ""
-            echo "=== Health Check ==="
-            curl -f http://localhost:${API_PORT:-8080}/api/v1/health || {
-              echo "Health check failed!"
-              exit 1
-            }
-            
-            echo ""
-            echo "=== Container Logs (last 20 lines) ==="
-            docker-compose -f docker-compose.prod.yml logs --tail=20
+            docker-compose -f /opt/go-backend-api/docker-compose.prod.yml ps
+            curl -f http://localhost:${API_PORT}/api/v1/health
           EOF
-
-      - name: Rollback on failure
-        if: failure()
-        run: |
-          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
-            set -e
-            echo "Deployment failed, attempting rollback..."
-            BACKUP_DIR=$(ls -t /opt/go-backend-api/backups/ | head -1)
-            if [ -n "$BACKUP_DIR" ] && [ -f "/opt/go-backend-api/backups/$BACKUP_DIR/previous_image.txt" ]; then
-              PREVIOUS_IMAGE=$(cat "/opt/go-backend-api/backups/$BACKUP_DIR/previous_image.txt")
-              echo "Rolling back to: $PREVIOUS_IMAGE"
-              docker-compose -f docker-compose.prod.yml down
-              # Restore previous image configuration
-              docker-compose -f docker-compose.prod.yml up -d
-            else
-              echo "No backup found, cannot rollback"
-            fi
-          EOF
-
-      - name: Deployment notification
-        if: always()
-        run: |
-          if [ "${{ job.status }}" == "success" ]; then
-            echo "✅ Deployment to ${{ github.event.inputs.environment || 'production' }} completed successfully!"
-            echo "Image: ${{ secrets.DOCKER_USERNAME }}/go-backend-api:${{ steps.image-tag.outputs.tag }}"
-          else
-            echo "❌ Deployment failed!"
-            exit 1
-          fi
