@@ -59,7 +59,7 @@ jobs:
           API_PORT: ${{ secrets.API_PORT || '8080' }}
           IMAGE: ${{ secrets.DOCKER_USERNAME }}/go-backend-api:${{ steps.tag.outputs.tag }}
         run: |
-          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << EOF
+          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} bash << EOF
             set -e
             cd /opt/go-backend-api
             
@@ -83,16 +83,21 @@ jobs:
             
             docker compose -f docker-compose.prod.yml up -d
             
+            HEALTHY=false
             for i in {1..20}; do
               if curl -f http://localhost:${API_PORT}/api/v1/health > /dev/null 2>&1; then
                 echo "✅ Service is healthy!"
-                exit 0
+                HEALTHY=true
+                break
               fi
               sleep 2
             done
-            echo "❌ Health check failed"
-            docker compose -f docker-compose.prod.yml logs
-            exit 1
+            
+            if [ "$HEALTHY" != "true" ]; then
+              echo "❌ Health check failed"
+              docker compose -f docker-compose.prod.yml logs
+              exit 1
+            fi
           EOF
 
       - name: Verify
