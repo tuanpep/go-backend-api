@@ -58,13 +58,6 @@ jobs:
       - name: Run go vet
         run: go vet ./...
 
-      - name: Run staticcheck
-        uses: dominikh/staticcheck-action@v1.2.2
-        continue-on-error: true
-        with:
-          version: "2024.1"
-          args: "-checks all"
-
       - name: Run tests
         env:
           DATABASE_URL: postgres://go_user:go_password@localhost:5432/go_learning_db?sslmode=disable
