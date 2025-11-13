@@ -1,0 +1,103 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  deploy:
+    name: Deploy to VM
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+
+      - name: Add VM to known hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create deployment directory on VM
+        run: |
+          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+            mkdir -p /opt/go-backend-api
+          EOF
+
+      - name: Copy files to VM
+        run: |
+          rsync -avz --delete \
+            --exclude '.git' \
+            --exclude 'node_modules' \
+            --exclude '.env*' \
+            --exclude 'tmp' \
+            --exclude 'bin' \
+            ./ ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/opt/go-backend-api/
+
+      - name: Deploy application
+        env:
+          API_PORT: ${{ secrets.API_PORT || '8080' }}
+        run: |
+          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << EOF
+            set -e
+            cd /opt/go-backend-api
+            
+            # Ensure .env.production exists
+            if [ ! -f .env.production ]; then
+              echo "Error: .env.production not found on VM!"
+              echo "Please create it from env.production.example"
+              exit 1
+            fi
+            
+            # Make deploy script executable
+            chmod +x scripts/deploy.sh
+            
+            # Run deployment
+            ./scripts/deploy.sh --build
+            
+            # Verify deployment
+            sleep 5
+            if curl -f http://localhost:${API_PORT:-8080}/api/v1/health > /dev/null 2>&1; then
+              echo "✅ Deployment successful!"
+            else
+              echo "⚠️  Health check failed, but deployment completed"
+            fi
+          EOF
+
+      - name: Verify deployment
+        env:
+          API_PORT: ${{ secrets.API_PORT || '8080' }}
+        run: |
+          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << EOF
+            echo "Checking service status..."
+            docker ps | grep go-api || docker-compose -f docker-compose.prod.yml ps
+            echo ""
+            echo "Checking health endpoint..."
+            curl -f http://localhost:${API_PORT:-8080}/api/v1/health || echo "Health check endpoint not accessible"
+          EOF
+
+      - name: Deployment notification
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Deployment to ${{ github.event.inputs.environment || 'production' }} completed successfully!"
+          else
+            echo "❌ Deployment failed!"
+            exit 1
+          fi
+

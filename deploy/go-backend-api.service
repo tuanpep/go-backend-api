@@ -1,0 +1,28 @@
+[Unit]
+Description=Go Backend API Service
+After=network.target postgresql.service
+Requires=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/go-backend-api
+EnvironmentFile=/opt/go-backend-api/.env.production
+ExecStart=/usr/local/bin/go-backend-api
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=go-backend-api
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/go-backend-api
+
+[Install]
+WantedBy=multi-user.target
+
