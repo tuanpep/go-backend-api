@@ -64,9 +64,10 @@ jobs:
             GO_VERSION=${{ env.GO_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
 
       - uses: aquasecurity/trivy-action@master
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         with:
           image-ref: ${{ steps.meta.outputs.image }}
           format: 'sarif'
@@ -74,6 +75,6 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: always() && (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
         with:
           sarif_file: 'trivy-results.sarif'

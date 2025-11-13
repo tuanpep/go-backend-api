@@ -25,13 +25,10 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     go mod download
 
-# Copy source code (needed for go mod tidy to work properly)
-COPY . .
-
-# Generate/update go.sum based on actual imports
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
-    go mod tidy && go mod verify
+# Copy only source code directories needed for build (better layer caching)
+COPY cmd/ ./cmd/
+COPY internal/ ./internal/
+COPY api/ ./api/
 
 # Build the application with optimizations
 # -ldflags='-w -s' strips debug info and symbol table

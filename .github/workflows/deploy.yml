@@ -69,7 +69,11 @@ jobs:
             fi
             
             echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-            docker pull $IMAGE || docker pull ${{ secrets.DOCKER_USERNAME }}/go-backend-api:latest
+            
+            # Only pull if image doesn't exist locally or if forced
+            if ! docker image inspect $IMAGE >/dev/null 2>&1; then
+              docker pull $IMAGE || docker pull ${{ secrets.DOCKER_USERNAME }}/go-backend-api:latest
+            fi
             
             docker compose -f docker-compose.prod.yml down || true
             
@@ -79,7 +83,7 @@ jobs:
             
             docker compose -f docker-compose.prod.yml up -d
             
-            for i in {1..30}; do
+            for i in {1..20}; do
               if curl -f http://localhost:${API_PORT}/api/v1/health > /dev/null 2>&1; then
                 echo "✅ Service is healthy!"
                 exit 0
