@@ -129,7 +129,8 @@ func (r *refreshTokenRepository) RotateToken(oldTokenID, newTokenID, newTokenHas
 	}
 	defer func() {
 		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
-			// Log error but don't fail - transaction may already be committed
+			// Ignore error - transaction may already be committed
+			_ = err
 		}
 	}()
 
