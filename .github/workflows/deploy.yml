@@ -83,22 +83,25 @@ jobs:
             
             docker compose -f docker-compose.prod.yml up -d
             
-            HEALTHY=false
+            # Health check with retry (disable set -e for this section)
+            set +e
+            HEALTH_CHECK_PASSED=0
             for i in {1..20}; do
               if curl -f http://localhost:${API_PORT}/api/v1/health > /dev/null 2>&1; then
                 echo "✅ Service is healthy!"
-                HEALTHY=true
+                HEALTH_CHECK_PASSED=1
                 break
               fi
+              echo "Waiting for service to be healthy... (attempt $i/20)"
               sleep 2
             done
+            set -e
             
-            if [ "$HEALTHY" != "true" ]; then
-              echo "❌ Health check failed"
+            if [ "$HEALTH_CHECK_PASSED" -eq 0 ]; then
+              echo "❌ Health check failed after 20 attempts"
               docker compose -f docker-compose.prod.yml logs
               exit 1
             fi
-            exit 0
           EOF
 
       - name: Verify
