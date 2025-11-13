@@ -98,6 +98,7 @@ jobs:
               docker compose -f docker-compose.prod.yml logs
               exit 1
             fi
+            exit 0
           EOF
 
       - name: Verify
